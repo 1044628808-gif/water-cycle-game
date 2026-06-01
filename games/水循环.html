@@ -1,0 +1,3298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神奇的水循环 - 互动学习游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 开始界面 */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1E90FF 0%, #87CEEB 50%, #98D8C8 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .start-title {
+            font-size: 52px;
+            color: white;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .start-subtitle {
+            font-size: 26px;
+            color: white;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .start-btn {
+            padding: 25px 70px;
+            font-size: 32px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+            margin: 10px;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
+        }
+
+        .start-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .settings-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .setting-btn {
+            padding: 12px 20px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .setting-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .setting-btn.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        /* 主游戏界面 */
+        .game-container {
+            display: none;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .game-header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-title {
+            font-size: 40px;
+            color: #1E90FF;
+            margin-bottom: 15px;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .score-item {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 12px 30px;
+            border-radius: 25px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        @media (max-width: 1000px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 动画演示区域 */
+        .animation-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 30px;
+            color: #FF6B6B;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .animation-container {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 4px solid #1E90FF;
+            cursor: pointer;
+            transition: background 1s ease;
+        }
+
+        /* 天空背景 - 会随步骤变化 */
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 65%;
+            background: linear-gradient(180deg, #4A90A4 0%, #87CEEB 100%);
+            transition: background 2s ease;
+        }
+
+        .sky.evaporation {
+            background: linear-gradient(180deg, #4A90A4 0%, #87CEEB 100%);
+        }
+
+        .sky.condensation {
+            background: linear-gradient(180deg, #546E7A 0%, #78909C 50%, #90A4AE 100%);
+        }
+
+        .sky.precipitation {
+            background: linear-gradient(180deg, #37474F 0%, #546E7A 50%, #78909C 100%);
+        }
+
+        .sky.runoff {
+            background: linear-gradient(180deg, #4A90A4 0%, #87CEEB 100%);
+        }
+
+        /* 太阳 - 更真实 */
+        .sun {
+            position: absolute;
+            top: 25px;
+            right: 60px;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #FFF700 0%, #FFD700 40%, #FFA500 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 60px #FFD700, 0 0 100px rgba(255, 215, 0, 0.5);
+            animation: sunPulse 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: all 1s ease;
+            z-index: 5;
+        }
+
+        .sun.hidden {
+            opacity: 0.3;
+            transform: scale(0.7);
+        }
+
+        .sun::before {
+            content: '';
+            position: absolute;
+            top: -25px;
+            left: -25px;
+            right: -25px;
+            bottom: -25px;
+            background: radial-gradient(circle, rgba(255,215,0,0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: sunRays 3s linear infinite;
+        }
+
+        @keyframes sunPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes sunRays {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 云朵容器 */
+        .clouds-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            pointer-events: none;
+        }
+
+        /* 云朵 - 可形成动画 */
+        .cloud {
+            position: absolute;
+            background: linear-gradient(180deg, #FFFFFF 0%, #E8E8E8 100%);
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: scale(0);
+            transition: all 2s ease;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .cloud.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: linear-gradient(180deg, #FFFFFF 0%, #E8E8E8 100%);
+            border-radius: 50%;
+        }
+
+        .cloud-1 {
+            width: 120px;
+            height: 50px;
+            top: 60px;
+            left: 8%;
+        }
+
+        .cloud-1::before {
+            width: 60px;
+            height: 60px;
+            top: -30px;
+            left: 20px;
+        }
+
+        .cloud-1::after {
+            width: 70px;
+            height: 70px;
+            top: -35px;
+            left: 50px;
+        }
+
+        .cloud-2 {
+            width: 140px;
+            height: 55px;
+            top: 80px;
+            left: 35%;
+        }
+
+        .cloud-2::before {
+            width: 70px;
+            height: 70px;
+            top: -35px;
+            left: 25px;
+        }
+
+        .cloud-2::after {
+            width: 80px;
+            height: 80px;
+            top: -40px;
+            left: 60px;
+        }
+
+        .cloud-3 {
+            width: 100px;
+            height: 45px;
+            top: 50px;
+            right: 18%;
+        }
+
+        .cloud-3::before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 15px;
+        }
+
+        .cloud-3::after {
+            width: 60px;
+            height: 60px;
+            top: -30px;
+            left: 40px;
+        }
+
+        .cloud.floating {
+            animation: floatCloud 6s ease-in-out infinite;
+        }
+
+        .cloud-1.floating { animation-delay: 0s; }
+        .cloud-2.floating { animation-delay: 2s; }
+        .cloud-3.floating { animation-delay: 4s; }
+
+        @keyframes floatCloud {
+            0%, 100% { transform: scale(1) translateX(0); }
+            50% { transform: scale(1) translateX(20px); }
+        }
+
+        /* 地面 */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            background: linear-gradient(180deg, #7CB342 0%, #558B2F 30%, #33691E 100%);
+        }
+
+        /* 山脉 */
+        .mountain {
+            position: absolute;
+            bottom: 35%;
+            left: 5%;
+        }
+
+        .mountain-main {
+            width: 0;
+            height: 0;
+            border-left: 100px solid transparent;
+            border-right: 100px solid transparent;
+            border-bottom: 150px solid #2E7D32;
+            position: relative;
+        }
+
+        .mountain-main::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: -30px;
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 50px solid #FFFFFF;
+        }
+
+        .mountain-small {
+            position: absolute;
+            bottom: 35%;
+            left: 25%;
+            width: 0;
+            height: 0;
+            border-left: 60px solid transparent;
+            border-right: 60px solid transparent;
+            border-bottom: 90px solid #388E3C;
+        }
+
+        .mountain-small::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: -20px;
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 30px solid #FFFFFF;
+        }
+
+        /* 树木 */
+        .tree {
+            position: absolute;
+            bottom: 35%;
+            left: 50%;
+        }
+
+        .tree-trunk {
+            width: 12px;
+            height: 40px;
+            background: linear-gradient(90deg, #5D4037, #8D6E63);
+            margin: 0 auto;
+            border-radius: 3px;
+        }
+
+        .tree-leaves {
+            width: 60px;
+            height: 70px;
+            background: linear-gradient(180deg, #4CAF50, #2E7D32);
+            border-radius: 50%;
+            margin-bottom: -10px;
+        }
+
+        /* 河流 */
+        .river {
+            position: absolute;
+            bottom: 25%;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            background: linear-gradient(180deg, #29B6F6 0%, #0288D1 100%);
+            overflow: hidden;
+        }
+
+        .river::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 0;
+            width: 200%;
+            height: 8px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent, rgba(255,255,255,0.5), transparent);
+            animation: riverFlow 4s linear infinite;
+        }
+
+        @keyframes riverFlow {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0%); }
+        }
+
+        /* 大海 */
+        .ocean {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 25%;
+            background: linear-gradient(180deg, #039BE5 0%, #01579B 100%);
+            animation: waves 4s ease-in-out infinite;
+        }
+
+        .ocean::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 15px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
+            animation: waveTop 2s ease-in-out infinite;
+        }
+
+        @keyframes waves {
+            0%, 100% { height: 25%; }
+            50% { height: 27%; }
+        }
+
+        @keyframes waveTop {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(3px); }
+        }
+
+        /* 水蒸气 - 更明显的写实水汽粒子 */
+        .vapor-particle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle, rgba(255,255,255,0.85), rgba(200,230,255,0.3));
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            filter: blur(0.5px);
+        }
+
+        .vapor-particle.wisp {
+            width: 6px;
+            height: 24px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(200,230,255,0.1));
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+
+        .vapor-particle.haze {
+            width: 35px;
+            height: 35px;
+            background: radial-gradient(circle, rgba(255,255,255,0.4), rgba(255,255,255,0.0));
+            border-radius: 50%;
+            filter: blur(2px);
+        }
+
+        .vapor-particle.active {
+            animation: vaporRise 5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        .vapor-particle.wisp.active {
+            animation: vaporWisp 4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        .vapor-particle.haze.active {
+            animation: vaporHaze 7s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        @keyframes vaporRise {
+            0% { 
+                transform: translateY(0) translateX(0) scale(1); 
+                opacity: 0; 
+            }
+            5% {
+                opacity: 0.65;
+            }
+            30% { 
+                opacity: 0.85;
+                transform: translateY(-60px) translateX(8px) scale(1.1); 
+            }
+            70% {
+                opacity: 0.5;
+            }
+            100% { 
+                transform: translateY(-320px) translateX(20px) scale(1.8); 
+                opacity: 0; 
+            }
+        }
+
+        @keyframes vaporWisp {
+            0% { 
+                transform: translateY(0) translateX(0) scaleX(1) scaleY(1); 
+                opacity: 0; 
+            }
+            8% {
+                opacity: 0.55;
+            }
+            40% {
+                transform: translateY(-100px) translateX(-12px) scaleX(1.4) scaleY(0.7); 
+                opacity: 0.7;
+            }
+            100% { 
+                transform: translateY(-300px) translateX(5px) scaleX(2) scaleY(0.3); 
+                opacity: 0; 
+            }
+        }
+
+        @keyframes vaporHaze {
+            0% { 
+                transform: translateY(0) scale(1); 
+                opacity: 0; 
+            }
+            10% {
+                opacity: 0.3;
+            }
+            50% { 
+                opacity: 0.4;
+                transform: translateY(-60px) scale(2); 
+            }
+            100% { 
+                transform: translateY(-200px) scale(3.5); 
+                opacity: 0; 
+            }
+        }
+
+        /* 雨滴 - 全图效果 */
+        .raindrop {
+            position: absolute;
+            width: 6px;
+            height: 18px;
+            background: linear-gradient(180deg, rgba(135,206,235,0.9), rgba(74,144,164,1));
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .raindrop.active {
+            animation: rainfall 2s linear forwards;
+        }
+
+        @keyframes rainfall {
+            0% { 
+                transform: translateY(0) rotate(10deg); 
+                opacity: 0.9; 
+            }
+            100% { 
+                transform: translateY(350px) rotate(10deg); 
+                opacity: 0; 
+            }
+        }
+
+        /* 地面径流 - 写实水流 */
+        .ground-flow {
+            position: absolute;
+            bottom: 25%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(41,182,246,0.3), rgba(2,136,209,0.5), rgba(1,87,155,0.4), transparent);
+            border-radius: 2px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .ground-flow.stream {
+            height: 5px;
+            background: linear-gradient(90deg, transparent, rgba(41,182,246,0.25), rgba(2,136,209,0.45), rgba(1,87,155,0.5), rgba(2,136,209,0.35), transparent);
+        }
+
+        .ground-flow.ripple {
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, rgba(255,255,255,0.5), rgba(41,182,246,0.2), transparent);
+            border-radius: 50%;
+            bottom: 22%;
+        }
+
+        .ground-flow.active {
+            animation: flowWater 2.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .ground-flow.stream.active {
+            animation: flowStream 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .ground-flow.ripple.active {
+            animation: flowRipple 1.8s ease-out forwards;
+        }
+
+        @keyframes flowWater {
+            0% { 
+                transform: translateX(-300px) scaleX(0.4); 
+                opacity: 0; 
+            }
+            15% {
+                opacity: 0.5;
+                transform: translateX(-150px) scaleX(0.8); 
+            }
+            60% {
+                opacity: 0.7;
+            }
+            100% { 
+                transform: translateX(350px) scaleX(1.1); 
+                opacity: 0; 
+            }
+        }
+
+        @keyframes flowStream {
+            0% { 
+                transform: translateX(-250px) scaleX(0.2) scaleY(0.4); 
+                opacity: 0; 
+            }
+            10% {
+                opacity: 0.45;
+                transform: translateX(-180px) scaleX(0.5) scaleY(0.8); 
+            }
+            45% {
+                opacity: 0.65;
+                transform: translateX(20px) scaleX(1.1) scaleY(1.2); 
+            }
+            100% { 
+                transform: translateX(400px) scaleX(1.3) scaleY(0.6); 
+                opacity: 0; 
+            }
+        }
+
+        @keyframes flowRipple {
+            0% { 
+                transform: scale(0); 
+                opacity: 0; 
+            }
+            15% {
+                opacity: 0.5;
+            }
+            100% { 
+                transform: scale(2.5); 
+                opacity: 0; 
+            }
+        }
+
+        /* 径流 - 左地右河容器 */
+        .runoff-scene {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            display: flex;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .runoff-scene.visible {
+            opacity: 1;
+        }
+
+        /* 左侧 - 地面（地上+地下） */
+        .runoff-land {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .runoff-land-surface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            background: linear-gradient(180deg, #8BC34A 0%, #7CB342 50%, #689F38 100%);
+        }
+
+        .runoff-land-underground {
+            position: absolute;
+            top: 35%;
+            left: 0;
+            width: 100%;
+            height: 65%;
+            background: linear-gradient(180deg, #8D6E63 0%, #795548 30%, #6D4C41 60%, #5D4037 100%);
+        }
+
+        /* 地下水层 - 更明显 */
+        .runoff-underground-water {
+            position: absolute;
+            top: 42%;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(180deg, rgba(41,182,246,0.25) 0%, rgba(41,182,246,0.5) 30%, rgba(2,136,209,0.6) 60%, rgba(1,87,155,0.45) 100%);
+            overflow: hidden;
+            border-top: 2px solid rgba(41,182,246,0.35);
+            border-bottom: 2px solid rgba(2,136,209,0.3);
+        }
+
+        .runoff-underground-water::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 0;
+            width: 200%;
+            height: 6px;
+            background: linear-gradient(90deg, transparent, rgba(41,182,246,0.5), transparent, rgba(41,182,246,0.4), transparent);
+            animation: undergroundFlow 3s linear infinite;
+        }
+
+        .runoff-underground-water::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            width: 200%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent, rgba(255,255,255,0.1), transparent);
+            animation: undergroundFlow 5s linear infinite;
+        }
+
+        @keyframes undergroundFlow {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0%); }
+        }
+
+        /* 地表水流 - 更宽更明显 */
+        .surface-stream {
+            position: absolute;
+            height: 5px;
+            background: linear-gradient(90deg, transparent, rgba(41,182,246,0.75), rgba(2,136,209,0.85), rgba(1,87,155,0.7), transparent);
+            border-radius: 3px;
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 1px 4px rgba(41,182,246,0.3);
+        }
+
+        .surface-stream.active {
+            animation: surfaceFlow 2.2s ease-in-out forwards;
+        }
+
+        @keyframes surfaceFlow {
+            0% { transform: translateX(0) scaleX(0.3); opacity: 0; }
+            20% { opacity: 0.85; }
+            100% { transform: translateX(120px) scaleX(1); opacity: 0; }
+        }
+
+        /* 地下水渗透 - 更明显 */
+        .underground-seep {
+            position: absolute;
+            width: 4px;
+            height: 0;
+            background: linear-gradient(180deg, rgba(41,182,246,0.7), rgba(41,182,246,0.2));
+            border-radius: 2px;
+            z-index: 5;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .underground-seep.active {
+            animation: seepDown 2s ease-in forwards;
+        }
+
+        @keyframes seepDown {
+            0% { height: 0; opacity: 0; }
+            15% { opacity: 0.75; }
+            100% { height: 90px; opacity: 0; }
+        }
+
+        /* 右侧 - 河流（更宽） */
+        .runoff-river {
+            width: 38%;
+            position: relative;
+            overflow: hidden;
+            border-left: 3px solid rgba(100,180,50,0.6);
+        }
+
+        .runoff-river-water {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(3,150,229,0.7) 0%, rgba(2,136,209,0.88) 25%, rgba(1,87,155,0.95) 70%, rgba(1,87,155,1) 100%);
+            overflow: hidden;
+        }
+
+        .runoff-river-water::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 6px,
+                rgba(255,255,255,0.1) 6px,
+                rgba(255,255,255,0.1) 8px
+            );
+            animation: riverSurface 1.8s linear infinite;
+        }
+
+        @keyframes riverSurface {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(8px); }
+        }
+
+        /* 河流波纹 - 更多更密 */
+        .river-ripple {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            animation: rippleMove 2s ease-in-out infinite;
+        }
+
+        @keyframes rippleMove {
+            0%, 100% { transform: translateY(0) scaleX(0.8); opacity: 0.3; }
+            50% { transform: translateY(3px) scaleX(1.1); opacity: 0.65; }
+        }
+
+        /* 汇入箭头 - 更明显 */
+        .runoff-arrow {
+            position: absolute;
+            top: 50%;
+            left: -14px;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 14px solid rgba(41,182,246,0.7);
+            z-index: 6;
+            opacity: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 0 3px rgba(41,182,246,0.4));
+        }
+
+        .runoff-arrow.active {
+            animation: arrowPulse 1s ease-in-out forwards;
+        }
+
+        @keyframes arrowPulse {
+            0% { opacity: 0; transform: translateX(-5px); }
+            50% { opacity: 0.9; }
+            100% { opacity: 0; transform: translateX(5px); }
+        }
+
+        /* 径流 - 旧版兼容（保留给flowContainer） */
+        .ground-flow {
+            position: absolute;
+            bottom: 25%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(41,182,246,0.3), rgba(2,136,209,0.5), rgba(1,87,155,0.4), transparent);
+            border-radius: 2px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .ground-flow.stream {
+            height: 5px;
+            background: linear-gradient(90deg, transparent, rgba(41,182,246,0.25), rgba(2,136,209,0.45), rgba(1,87,155,0.5), rgba(2,136,209,0.35), transparent);
+        }
+
+        .ground-flow.ripple {
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, rgba(255,255,255,0.5), rgba(41,182,246,0.2), transparent);
+            border-radius: 50%;
+            bottom: 22%;
+        }
+
+        .ground-flow.active {
+            animation: flowWater 2.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .ground-flow.stream.active {
+            animation: flowStream 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .ground-flow.ripple.active {
+            animation: flowRipple 1.8s ease-out forwards;
+        }
+
+        @keyframes flowWater {
+            0% { transform: translateX(-300px) scaleX(0.4); opacity: 0; }
+            15% { opacity: 0.5; transform: translateX(-150px) scaleX(0.8); }
+            60% { opacity: 0.7; }
+            100% { transform: translateX(350px) scaleX(1.1); opacity: 0; }
+        }
+
+        @keyframes flowStream {
+            0% { transform: translateX(-250px) scaleX(0.2) scaleY(0.4); opacity: 0; }
+            10% { opacity: 0.45; transform: translateX(-180px) scaleX(0.5) scaleY(0.8); }
+            45% { opacity: 0.65; transform: translateX(20px) scaleX(1.1) scaleY(1.2); }
+            100% { transform: translateX(400px) scaleX(1.3) scaleY(0.6); opacity: 0; }
+        }
+
+        @keyframes flowRipple {
+            0% { transform: scale(0); opacity: 0; }
+            15% { opacity: 0.5; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        .runoff-ground.visible {
+            opacity: 1;
+        }
+
+        /* 径流 - 可见水面层 */
+        .runoff-water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 12%;
+            background: linear-gradient(180deg, rgba(41,182,246,0.7) 0%, rgba(2,136,209,0.85) 50%, rgba(1,87,155,0.9) 100%);
+            opacity: 0;
+            transition: opacity 1.2s ease 0.3s;
+            z-index: 3;
+            overflow: hidden;
+        }
+
+        .runoff-water.visible {
+            opacity: 1;
+        }
+
+        .runoff-water::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 8px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent, rgba(255,255,255,0.3), transparent);
+            animation: runoffFlow 3s linear infinite;
+        }
+
+        @keyframes runoffFlow {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0%); }
+        }
+
+        /* 径流 - 地面水流纹理 */
+        .runoff-stream {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, rgba(41,182,246,0.6), rgba(2,136,209,0.7), transparent);
+            border-radius: 2px;
+            opacity: 0;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .runoff-stream.active {
+            animation: runoffStreamFlow 2.5s ease-in-out forwards;
+        }
+
+        @keyframes runoffStreamFlow {
+            0% { 
+                transform: translateX(-150px) scaleX(0.3); 
+                opacity: 0; 
+            }
+            20% {
+                opacity: 0.7;
+            }
+            100% { 
+                transform: translateX(150px) scaleX(1.2); 
+                opacity: 0; 
+            }
+        }
+
+        /* 步骤标签 */
+        .step-label {
+            position: absolute;
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 10;
+            border-left: 4px solid;
+        }
+
+        .step-label.active {
+            opacity: 1;
+            animation: popIn 0.5s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0) translateY(20px); }
+            50% { transform: scale(1.1) translateY(-5px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+
+        .step-1 { top: 180px; left: 3%; border-color: #FF9800; background: #FFF3E0; }
+        .step-2 { top: 25px; left: 35%; border-color: #2196F3; background: #E3F2FD; }
+        .step-3 { top: 180px; right: 3%; border-color: #9C27B0; background: #F3E5F5; }
+        .step-4 { bottom: 30%; left: 48%; border-color: #4CAF50; background: #E8F5E9; transform: translateX(-50%); }
+
+        /* 控制按钮 */
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #00C853, #00E676);
+            color: white;
+            box-shadow: 0 5px 20px rgba(0, 200, 83, 0.4);
+        }
+
+        .next-btn {
+            background: linear-gradient(135deg, #2196F3, #03A9F4);
+            color: white;
+            box-shadow: 0 5px 20px rgba(33, 150, 243, 0.4);
+        }
+
+        .quiz-btn {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #9E9E9E, #757575);
+            color: white;
+            box-shadow: 0 5px 20px rgba(158, 158, 158, 0.4);
+        }
+
+        .voice-btn {
+            background: linear-gradient(135deg, #9C27B0, #E040FB);
+            color: white;
+            box-shadow: 0 5px 20px rgba(156, 39, 176, 0.4);
+        }
+
+        /* 右侧讲解面板 */
+        .explanation-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .panel-title {
+            font-size: 24px;
+            color: #1E90FF;
+            margin-bottom: 20px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #E3F2FD;
+        }
+
+        .step-info {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .step-info:hover {
+            transform: translateX(5px);
+        }
+
+        .step-info.active {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .step-info-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .step-number {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 16px;
+        }
+
+        .step-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .step-description {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #555;
+            margin-left: 45px;
+        }
+
+        .step-1-bg { background: #FFF3E0; }
+        .step-1-bg .step-number { background: #FF9800; }
+        .step-1-bg.active { border-left: 4px solid #FF9800; }
+
+        .step-2-bg { background: #E3F2FD; }
+        .step-2-bg .step-number { background: #2196F3; }
+        .step-2-bg.active { border-left: 4px solid #2196F3; }
+
+        .step-3-bg { background: #F3E5F5; }
+        .step-3-bg .step-number { background: #9C27B0; }
+        .step-3-bg.active { border-left: 4px solid #9C27B0; }
+
+        .step-4-bg { background: #E8F5E9; }
+        .step-4-bg .step-number { background: #4CAF50; }
+        .step-4-bg.active { border-left: 4px solid #4CAF50; }
+
+        /* 当前讲解 */
+        .current-explanation {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .current-explanation h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .current-explanation p {
+            font-size: 15px;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+
+        .voice-indicator {
+            display: inline-block;
+            animation: voicePulse 1s infinite;
+        }
+
+        @keyframes voicePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* 问答区域 */
+        .quiz-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 25px;
+            background: #E0E0E0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00C853, #00E676);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .question-container {
+            text-align: center;
+        }
+
+        .question-number {
+            font-size: 22px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 26px;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 600px) {
+            .options-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .option-btn {
+            padding: 20px 25px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            border: 3px solid transparent;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(135deg, #00C853, #00E676);
+            color: white;
+            border-color: #00C853;
+        }
+
+        .option-btn.wrong {
+            background: linear-gradient(135deg, #FF5252, #FF1744);
+            color: white;
+            border-color: #FF5252;
+        }
+
+        .feedback {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 22px;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 0.3s ease;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .feedback.show {
+            opacity: 1;
+        }
+
+        .feedback.correct {
+            color: #00C853;
+            background: #E8F5E9;
+        }
+
+        .feedback.wrong {
+            color: #FF5252;
+            background: #FFEBEE;
+        }
+
+        /* 完成界面 */
+        .completion-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .completion-content {
+            text-align: center;
+            color: white;
+            animation: bounceIn 1s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .completion-title {
+            font-size: 60px;
+            margin-bottom: 25px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .completion-score {
+            font-size: 40px;
+            margin-bottom: 25px;
+        }
+
+        .completion-message {
+            font-size: 26px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .restart-btn {
+            padding: 25px 60px;
+            font-size: 28px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+            margin: 10px;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* 动画信息卡片 */
+        .animation-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .animation-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .info-card.active {
+            border: 3px solid #1E90FF;
+        }
+
+        .info-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        /* 互动提示 */
+        .interaction-hint {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            animation: pulse 2s infinite;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        /* 语音播放状态指示 */
+        .speaking {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(156, 39, 176, 0.9);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 20;
+        }
+
+        .speaking.show {
+            display: flex;
+        }
+
+        .speaking-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .speaking-dots span {
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: speakingBounce 0.5s infinite alternate;
+        }
+
+        .speaking-dots span:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .speaking-dots span:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes speakingBounce {
+            0% { transform: scaleY(1); }
+            100% { transform: scaleY(1.5); }
+        }
+
+        /* ========== 闯关路线图 ========== */
+        .route-section {
+            display: none;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .route-map {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .route-node {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+            border: 3px dashed #ccc;
+            background: #f9f9f9;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .route-node.start {
+            border-color: #039BE5;
+            background: linear-gradient(135deg, #E1F5FE, #B3E5FC);
+            color: #0277BD;
+            border-style: solid;
+        }
+
+        .route-node.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .route-node.unlocked {
+            border-color: #FF9800;
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            animation: nodeGlow 1.5s ease-in-out infinite;
+        }
+
+        .route-node.completed {
+            border-color: #4CAF50;
+            background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+            color: #2E7D32;
+            border-style: solid;
+        }
+
+        @keyframes nodeGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(255,152,0,0.3); }
+            50% { box-shadow: 0 0 20px rgba(255,152,0,0.6); }
+        }
+
+        .route-node .node-icon {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+
+        .route-node .node-label {
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .route-node .node-input {
+            width: 80px;
+            border: none;
+            border-bottom: 2px dashed #aaa;
+            background: transparent;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            outline: none;
+            margin-top: 4px;
+        }
+
+        .route-node .node-input:focus {
+            border-bottom-color: #FF9800;
+        }
+
+        .route-node .node-input.correct {
+            border-bottom-color: #4CAF50;
+            color: #2E7D32;
+            border-bottom-style: solid;
+        }
+
+        .route-arrow {
+            width: 50px;
+            height: 4px;
+            background: #ddd;
+            position: relative;
+            flex-shrink: 0;
+            margin: 0 5px;
+        }
+
+        .route-arrow::after {
+            content: '';
+            position: absolute;
+            right: -2px;
+            top: -6px;
+            border: 8px solid transparent;
+            border-left: 10px solid #ddd;
+        }
+
+        .route-arrow.filled {
+            background: #4CAF50;
+        }
+
+        .route-arrow.filled::after {
+            border-left-color: #4CAF50;
+        }
+
+        .route-hint {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 15px;
+            color: #888;
+        }
+
+        .route-result {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .route-result.success { color: #4CAF50; }
+        .route-result.fail { color: #FF5252; }
+
+        /* 路线图选择区 */
+        .route-quiz-area {
+            max-width: 600px;
+            margin: 20px auto 0;
+            text-align: center;
+            display: none;
+        }
+
+        .route-quiz-prompt {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #FFF8E1, #FFECB3);
+            border-radius: 12px;
+            border: 2px solid #FFD54F;
+        }
+
+        .route-quiz-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .route-opt-btn {
+            padding: 14px 20px;
+            font-size: 17px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .route-opt-btn:hover { border-color: #FF9800; background: #FFF3E0; transform: scale(1.03); }
+        .route-opt-btn.correct { background: #E8F5E9; border-color: #4CAF50; color: #2E7D32; animation: correctPop 0.5s ease; }
+        .route-opt-btn.wrong { background: #FFEBEE; border-color: #EF5350; color: #C62828; animation: shake 0.4s ease; }
+
+        @keyframes correctPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        /* 路线图鼓励弹窗 */
+        .route-celebrate {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .route-celebrate.show { display: flex; }
+
+        .celebrate-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 50px;
+            text-align: center;
+            animation: celebrateIn 0.5s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        @keyframes celebrateIn {
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            60% { transform: scale(1.1) rotate(2deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .celebrate-emoji { font-size: 60px; margin-bottom: 10px; }
+        .celebrate-text { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .celebrate-sub { font-size: 16px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+        .celebrate-btn {
+            padding: 12px 35px;
+            font-size: 18px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .celebrate-btn:hover { transform: scale(1.05); }
+
+        /* ========== 情景/脑洞问答 ========== */
+        .extra-quiz-section {
+            display: none;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .extra-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .extra-tab-btn {
+            padding: 12px 28px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .extra-tab-btn:hover { border-color: #90CAF9; color: #1976D2; }
+        .extra-tab-btn.active { background: linear-gradient(135deg, #42A5F5, #1E88E5); color: white; border-color: #1E88E5; }
+
+        .extra-question-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #E3F2FD;
+            transition: all 0.3s ease;
+        }
+
+        .extra-question-card:hover { border-color: #90CAF9; }
+
+        .extra-q-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .tag-scenario { background: #FFF3E0; color: #E65100; }
+        .tag-brainstorm { background: #F3E5F5; color: #7B1FA2; }
+
+        .extra-q-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .extra-q-options { display: flex; flex-direction: column; gap: 10px; }
+
+        .extra-q-btn {
+            padding: 14px 20px;
+            font-size: 16px;
+            border: 2px solid #E0E0E0;
+            border-radius: 12px;
+            background: #FAFAFA;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .extra-q-btn:hover:not(:disabled) { border-color: #42A5F5; background: #E3F2FD; }
+        .extra-q-btn.correct { background: #E8F5E9; border-color: #4CAF50; color: #2E7D32; font-weight: bold; }
+        .extra-q-btn.wrong { background: #FFEBEE; border-color: #EF5350; color: #C62828; }
+        .extra-q-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+        .extra-q-feedback {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .extra-q-feedback.show { display: block; }
+        .extra-q-feedback.correct-fb { background: #E8F5E9; color: #2E7D32; border-left: 4px solid #4CAF50; }
+        .extra-q-feedback.wrong-fb { background: #FFF3E0; color: #BF360C; border-left: 4px solid #FF5722; }
+
+        .extra-progress {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 15px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <!-- 开始界面 -->
+    <div class="start-screen" id="startScreen">
+        <div class="settings-bar">
+            <button class="setting-btn active" id="soundToggle" onclick="toggleSound()">🔊 音效</button>
+            <button class="setting-btn active" id="voiceToggle" onclick="toggleVoice()">🗣️ 语音</button>
+        </div>
+        <h1 class="start-title">💧 神奇的水循环 💧</h1>
+        <p class="start-subtitle">探索水在大自然中的奇妙旅程</p>
+        <div class="start-buttons">
+            <button class="start-btn" onclick="startGame('learn')">📚 学习模式</button>
+            <button class="start-btn" onclick="startGame('quiz')">🎯 挑战模式</button>
+        </div>
+    </div>
+
+    <!-- 主游戏界面 -->
+    <div class="game-container" id="gameContainer">
+        <div class="game-header">
+            <h1 class="game-title">🌊 水循环探索之旅 🌊</h1>
+            <div class="score-board">
+                <div class="score-item">⭐ 得分: <span id="score">0</span></div>
+                <div class="score-item">📊 正确率: <span id="accuracy">100</span>%</div>
+                <div class="score-item">🎯 题目: <span id="questionProgress">0/5</span></div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 左侧动画区域 -->
+            <div class="animation-section">
+                <h2 class="section-title">🌈 水循环动画演示</h2>
+                
+                <div class="animation-container" id="animationContainer">
+                    <!-- 语音播放状态 -->
+                    <div class="speaking" id="speakingIndicator">
+                        <div class="speaking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        语音讲解中...
+                    </div>
+
+                    <!-- 天空 -->
+                    <div class="sky" id="sky"></div>
+                    
+                    <!-- 太阳 -->
+                    <div class="sun" id="sun" onclick="handleSunClick()" title="点击太阳加热"></div>
+                    
+                    <!-- 云朵容器 -->
+                    <div class="clouds-container">
+                        <div class="cloud cloud-1" id="cloud1" onclick="handleCloudClick(1)" title="点击云朵"></div>
+                        <div class="cloud cloud-2" id="cloud2" onclick="handleCloudClick(2)" title="点击云朵"></div>
+                        <div class="cloud cloud-3" id="cloud3" onclick="handleCloudClick(3)" title="点击云朵"></div>
+                    </div>
+                    
+                    <!-- 山脉 -->
+                    <div class="mountain">
+                        <div class="mountain-main"></div>
+                    </div>
+                    <div class="mountain-small"></div>
+                    
+                    <!-- 树木 -->
+                    <div class="tree">
+                        <div class="tree-leaves"></div>
+                        <div class="tree-trunk"></div>
+                    </div>
+                    
+                    <!-- 河流 -->
+                    <div class="river"></div>
+                    
+                    <!-- 大海 -->
+                    <div class="ocean"></div>
+                    
+                    <!-- 水蒸气粒子容器 -->
+                    <div id="vaporContainer"></div>
+                    
+                    <!-- 雨滴容器 -->
+                    <div id="rainContainer"></div>
+                    
+                    <!-- 地面径流容器 -->
+                    <div id="flowContainer"></div>
+                    
+                    <!-- 径流场景：左地右河 -->
+                    <div class="runoff-scene" id="runoffScene">
+                        <!-- 左侧地面（地上+地下） -->
+                        <div class="runoff-land">
+                            <div class="runoff-land-surface"></div>
+                            <div class="runoff-land-underground"></div>
+                            <div class="runoff-underground-water"></div>
+                        </div>
+                        <!-- 右侧河流 -->
+                        <div class="runoff-river">
+                            <div class="runoff-river-water">
+                                <div class="river-ripple" style="top: 8%"></div>
+                                <div class="river-ripple" style="top: 18%; animation-delay: 0.4s"></div>
+                                <div class="river-ripple" style="top: 28%; animation-delay: 0.8s"></div>
+                                <div class="river-ripple" style="top: 38%; animation-delay: 1.2s"></div>
+                                <div class="river-ripple" style="top: 48%; animation-delay: 0.2s"></div>
+                                <div class="river-ripple" style="top: 58%; animation-delay: 0.6s"></div>
+                                <div class="river-ripple" style="top: 68%; animation-delay: 1s"></div>
+                                <div class="river-ripple" style="top: 78%; animation-delay: 1.4s"></div>
+                                <div class="river-ripple" style="top: 88%; animation-delay: 0.3s"></div>
+                                <div class="river-ripple" style="top: 95%; animation-delay: 0.9s"></div>
+                            </div>
+                        </div>
+                        <!-- 汇入箭头 -->
+                        <div class="runoff-arrow" id="runoffArrow"></div>
+                    </div>
+                    
+                    <!-- 步骤标签 -->
+                    <div class="step-label step-1" id="step1">1️⃣ 蒸发</div>
+                    <div class="step-label step-2" id="step2">2️⃣ 凝结</div>
+                    <div class="step-label step-3" id="step3">3️⃣ 降水</div>
+                    <div class="step-label step-4" id="step4">4️⃣ 径流</div>
+                    
+                    <!-- 互动提示 -->
+                    <div class="interaction-hint" id="interactionHint">💡 点击太阳或云朵试试看！</div>
+                </div>
+
+                <div class="control-buttons">
+                    <button class="control-btn next-btn" onclick="nextStep()">⏭️ 下一步</button>
+                    <button class="control-btn voice-btn" onclick="speakCurrentStep()">🗣️ 语音讲解</button>
+                    <button class="control-btn reset-btn" onclick="resetAnimation()">🔄 重置</button>
+                    <button class="control-btn quiz-btn" onclick="startQuiz()">📝 知识答题</button>
+                    <button class="control-btn" style="background:linear-gradient(135deg,#FF9800,#FFB74D);color:white;box-shadow:0 5px 20px rgba(255,152,0,0.4)" onclick="showRouteMap()">🗺️ 闯关路线</button>
+                    <button class="control-btn" style="background:linear-gradient(135deg,#9C27B0,#BA68C8);color:white;box-shadow:0 5px 20px rgba(156,39,176,0.4)" onclick="showExtraQuiz()">🧠 挑战升级</button>
+                </div>
+
+                <div class="animation-info">
+                    <div class="info-card" id="infoCard1" onclick="showStepInfo(0)">
+                        <div class="info-icon">☀️</div>
+                        <div class="info-text">蒸发</div>
+                    </div>
+                    <div class="info-card" id="infoCard2" onclick="showStepInfo(1)">
+                        <div class="info-icon">☁️</div>
+                        <div class="info-text">凝结</div>
+                    </div>
+                    <div class="info-card" id="infoCard3" onclick="showStepInfo(2)">
+                        <div class="info-icon">🌧️</div>
+                        <div class="info-text">降水</div>
+                    </div>
+                    <div class="info-card" id="infoCard4" onclick="showStepInfo(3)">
+                        <div class="info-icon">🌊</div>
+                        <div class="info-text">径流</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧讲解面板 -->
+            <div class="explanation-panel">
+                <h3 class="panel-title">📖 知识讲解</h3>
+                
+                <div class="step-info step-1-bg" id="stepInfo1" onclick="showStepInfo(0)">
+                    <div class="step-info-header">
+                        <div class="step-number">1</div>
+                        <div class="step-name">蒸发</div>
+                    </div>
+                    <div class="step-description">太阳加热水面，水变成水蒸气飞向天空</div>
+                </div>
+                
+                <div class="step-info step-2-bg" id="stepInfo2" onclick="showStepInfo(1)">
+                    <div class="step-info-header">
+                        <div class="step-number">2</div>
+                        <div class="step-name">凝结</div>
+                    </div>
+                    <div class="step-description">水蒸气遇冷变成小水滴，形成云朵</div>
+                </div>
+                
+                <div class="step-info step-3-bg" id="stepInfo3" onclick="showStepInfo(2)">
+                    <div class="step-info-header">
+                        <div class="step-number">3</div>
+                        <div class="step-name">降水</div>
+                    </div>
+                    <div class="step-description">水滴变重后从云中落下，形成雨雪冰雹</div>
+                </div>
+                
+                <div class="step-info step-4-bg" id="stepInfo4" onclick="showStepInfo(3)">
+                    <div class="step-info-header">
+                        <div class="step-number">4</div>
+                        <div class="step-name">径流</div>
+                    </div>
+                    <div class="step-description">雨水流入小溪、河流，最终回到大海</div>
+                </div>
+
+                <div class="current-explanation" id="currentExplanation">
+                    <h3>🎓 欢迎学习水循环！</h3>
+                    <p>点击"完整演示"按钮观看水循环的神奇过程，或点击各个步骤了解详细知识！</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 问答区域 -->
+        <div class="quiz-section" id="quizSection">
+            <h2 class="section-title">🎯 知识问答挑战</h2>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+
+            <div class="question-container">
+                <div class="question-number" id="questionNumber">问题 1/5</div>
+                <div class="question-text" id="questionText"></div>
+                
+                <div class="options-container" id="optionsContainer"></div>
+
+                <div class="feedback" id="feedback"></div>
+            </div>
+        </div>
+
+        <!-- 闯关路线图 -->
+        <div class="route-section" id="routeSection">
+            <h2 class="section-title">🗺️ 水循环闯关路线图</h2>
+            <p class="route-hint">从「湖泊」出发，点击正确答案闯过每一关，画出完整水循环路径！</p>
+            
+            <div class="route-map" id="routeMap">
+                <div class="route-node completed" id="rn0">
+                    <div class="node-icon">💧</div>
+                    <div class="node-label">湖泊</div>
+                </div>
+                <div class="route-arrow" id="ra0"></div>
+                <div class="route-node unlocked" id="rn1">
+                    <div class="node-icon">☀️</div>
+                    <div class="node-label" id="rnLabel1">第1关</div>
+                </div>
+                <div class="route-arrow" id="ra1"></div>
+                <div class="route-node locked" id="rn2">
+                    <div class="node-icon">☁️</div>
+                    <div class="node-label" id="rnLabel2">第2关</div>
+                </div>
+                <div class="route-arrow" id="ra2"></div>
+                <div class="route-node locked" id="rn3">
+                    <div class="node-icon">🌧️</div>
+                    <div class="node-label" id="rnLabel3">第3关</div>
+                </div>
+                <div class="route-arrow" id="ra3"></div>
+                <div class="route-node locked" id="rn4">
+                    <div class="node-icon">🌊</div>
+                    <div class="node-label" id="rnLabel4">第4关</div>
+                </div>
+            </div>
+            
+            <!-- 关卡选择区 -->
+            <div class="route-quiz-area" id="routeQuizArea">
+                <div class="route-quiz-prompt" id="routeQuizPrompt"></div>
+                <div class="route-quiz-options" id="routeQuizOptions"></div>
+            </div>
+            
+            <div class="route-result" id="routeResult"></div>
+        </div>
+
+        <!-- 情景问答 & 脑洞问答 -->
+        <div class="extra-quiz-section" id="extraQuizSection">
+            <h2 class="section-title">🧠 挑战升级</h2>
+            
+            <div class="extra-tabs">
+                <button class="extra-tab-btn active" onclick="switchExtraTab('scenario')">🏠 情景问答</button>
+                <button class="extra-tab-btn" onclick="switchExtraTab('brainstorm')">💡 脑洞问答</button>
+            </div>
+            
+            <div class="extra-progress" id="extraProgress"></div>
+            
+            <div id="extraQuestionArea"></div>
+        </div>
+    </div>
+
+    <!-- 完成界面 -->
+    <div class="completion-screen" id="completionScreen">
+        <div class="completion-content">
+            <h1 class="completion-title">🎉 恭喜完成！🎉</h1>
+            <div class="completion-score">
+                你的得分: <span id="finalScore">0</span> 分
+            </div>
+            <div class="completion-message" id="completionMessage">
+                你已经掌握了水循环的知识！
+            </div>
+            <button class="restart-btn" onclick="restartGame()">🔄 再来一次</button>
+            <button class="restart-btn" onclick="backToMenu()">🏠 返回菜单</button>
+        </div>
+    </div>
+
+    <!-- 路线图闯关鼓励弹窗 -->
+    <div class="route-celebrate" id="routeCelebrate">
+        <div class="celebrate-card">
+            <div class="celebrate-emoji" id="celEmoji">🎉</div>
+            <div class="celebrate-text" id="celText">太棒了！</div>
+            <div class="celebrate-sub" id="celSub"></div>
+            <button class="celebrate-btn" onclick="closeCelebrate()">继续闯关 →</button>
+        </div>
+    </div>
+
+    <script>
+        // 音效系统
+        let soundEnabled = true;
+        let voiceEnabled = true;
+        let audioContext = null;
+        let isSpeaking = false;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            switch(type) {
+                case 'click':
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                    break;
+                case 'correct':
+                    oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                    break;
+                case 'wrong':
+                    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(150, audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                    break;
+                case 'water':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.5);
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                    break;
+                case 'rain':
+                    for (let i = 0; i < 8; i++) {
+                        setTimeout(() => {
+                            const osc = audioContext.createOscillator();
+                            const gain = audioContext.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioContext.destination);
+                            osc.frequency.setValueAtTime(800 + Math.random() * 800, audioContext.currentTime);
+                            gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                            osc.start(audioContext.currentTime);
+                            osc.stop(audioContext.currentTime + 0.1);
+                        }, i * 40);
+                    }
+                    break;
+                case 'step':
+                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                    break;
+                case 'complete':
+                    const notes = [523, 659, 784, 1047];
+                    notes.forEach((freq, i) => {
+                        setTimeout(() => {
+                            const osc = audioContext.createOscillator();
+                            const gain = audioContext.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioContext.destination);
+                            osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+                            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                            osc.start(audioContext.currentTime);
+                            osc.stop(audioContext.currentTime + 0.3);
+                        }, i * 150);
+                    });
+                    break;
+                case 'evaporate':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.8);
+                    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.8);
+                    break;
+            }
+        }
+
+        // 语音系统
+        function speak(text, callback) {
+            if (!voiceEnabled || !('speechSynthesis' in window)) {
+                if (callback) callback();
+                return;
+            }
+
+            // 停止之前的语音
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+
+            utterance.onstart = () => {
+                isSpeaking = true;
+                document.getElementById('speakingIndicator').classList.add('show');
+            };
+
+            utterance.onend = () => {
+                isSpeaking = false;
+                document.getElementById('speakingIndicator').classList.remove('show');
+                if (callback) callback();
+            };
+
+            utterance.onerror = () => {
+                isSpeaking = false;
+                document.getElementById('speakingIndicator').classList.remove('show');
+                if (callback) callback();
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function stopSpeaking() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            isSpeaking = false;
+            document.getElementById('speakingIndicator').classList.remove('show');
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').classList.toggle('active', soundEnabled);
+            if (soundEnabled) playSound('click');
+        }
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            document.getElementById('voiceToggle').classList.toggle('active', voiceEnabled);
+            if (!voiceEnabled) stopSpeaking();
+            else speak('语音讲解已开启');
+        }
+
+        // 游戏状态
+        let score = 0;
+        let totalQuestions = 5;
+        let currentQuestion = 0;
+        let correctAnswers = 0;
+        let currentStep = -1;
+        let isAnimating = false;
+        let gameMode = 'learn';
+        let animationInterval = null;
+        let cloudTimeouts = [];
+
+        // 水循环步骤详解
+        const steps = [
+            {
+                name: '蒸发',
+                explanation: '太阳的热量使水面温度升高，水分子获得足够的能量后，从液态变成气态，变成水蒸气飞向天空。就像烧开水时看到的白气一样！',
+                voiceText: '蒸发。太阳的热量使水面温度升高，水分子获得足够的能量后，从液态变成气态，变成水蒸气飞向天空。就像烧开水时看到的白气一样！',
+                color: '#FF9800'
+            },
+            {
+                name: '凝结',
+                explanation: '水蒸气上升到高空后，遇到冷空气冷却，变成小水滴或小冰晶。这些小水滴聚在一起，就形成了我们看到的云朵！',
+                voiceText: '凝结。水蒸气上升到高空后，遇到冷空气冷却，变成小水滴或小冰晶。这些小水滴聚在一起，就形成了我们看到的云朵！',
+                color: '#2196F3'
+            },
+            {
+                name: '降水',
+                explanation: '云中的小水滴不断合并变大，当重量足够大时，就会从云中落下，形成雨、雪、冰雹等降水，滋润大地！',
+                voiceText: '降水。云中的小水滴不断合并变大，当重量足够大时，就会从云中落下，形成雨、雪、冰雹等降水，滋润大地！',
+                color: '#9C27B0'
+            },
+            {
+                name: '径流',
+                explanation: '落到地面的雨水汇入小溪、河流，经过土壤渗透，最终流回大海、湖泊，完成水循环。然后又开始新的循环！',
+                voiceText: '径流。落到地面的雨水汇入小溪、河流，经过土壤渗透，最终流回大海、湖泊，完成水循环。然后又开始新的循环！',
+                color: '#4CAF50'
+            }
+        ];
+
+        // 题库
+        const allQuestions = [
+            {
+                question: '水循环的第一个步骤是什么？',
+                options: ['蒸发', '凝结', '降水', '径流'],
+                correct: 0,
+                explanation: '正确！太阳加热水面，水变成水蒸气飞向天空，这就是蒸发。'
+            },
+            {
+                question: '水蒸气在高空会变成什么？',
+                options: ['石头', '云朵', '星星', '彩虹'],
+                correct: 1,
+                explanation: '正确！水蒸气遇冷凝结成小水滴，形成了我们看到的云。'
+            },
+            {
+                question: '下雨属于水循环的哪个步骤？',
+                options: ['蒸发', '凝结', '降水', '径流'],
+                correct: 2,
+                explanation: '正确！云里的水滴变重后落下来，就是降水。'
+            },
+            {
+                question: '是什么力量推动水循环？',
+                options: ['月亮', '风', '太阳', '地球'],
+                correct: 2,
+                explanation: '正确！太阳提供热量，让水蒸发，是水循环的主要动力。'
+            },
+            {
+                question: '雨水最终会流向哪里？',
+                options: ['太空', '山洞', '大海', '沙漠'],
+                correct: 2,
+                explanation: '正确！雨水通过河流最终流回大海，完成一个循环。'
+            }
+        ];
+        let questions = [];
+
+        function shuffleArray(arr) {
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // 初始化
+        function init() {
+            document.addEventListener('click', () => initAudio(), { once: true });
+        }
+
+        // 开始游戏
+        function startGame(mode) {
+            playSound('click');
+            gameMode = mode;
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            score = 0;
+            currentQuestion = 0;
+            correctAnswers = 0;
+            currentStep = -1;
+            updateScore();
+            
+            // 初始隐藏云朵
+            hideAllClouds();
+            
+            if (mode === 'quiz') {
+                document.querySelector('.main-content').style.display = 'none';
+                document.getElementById('quizSection').style.display = 'block';
+                document.getElementById('routeSection').style.display = 'none';
+                document.getElementById('extraQuizSection').style.display = 'none';
+                document.querySelector('.control-buttons').style.display = 'none';
+                document.querySelector('.animation-info').style.display = 'none';
+                showQuestion();
+            } else {
+                document.querySelector('.main-content').style.display = 'grid';
+                document.querySelector('.control-buttons').style.display = 'flex';
+                document.querySelector('.animation-info').style.display = 'grid';
+                document.getElementById('quizSection').style.display = 'none';
+                document.getElementById('routeSection').style.display = 'none';
+                document.getElementById('extraQuizSection').style.display = 'none';
+                speak('欢迎来到水循环学习！点击各个步骤了解水循环的神奇过程吧！');
+            }
+        }
+
+        // 隐藏所有云朵
+        function hideAllClouds() {
+            document.getElementById('cloud1').classList.remove('visible', 'floating');
+            document.getElementById('cloud2').classList.remove('visible', 'floating');
+            document.getElementById('cloud3').classList.remove('visible', 'floating');
+        }
+
+        // 显示云朵
+        function showClouds() {
+            document.getElementById('cloud1').classList.add('visible', 'floating');
+            setTimeout(() => {
+                document.getElementById('cloud2').classList.add('visible', 'floating');
+            }, 500);
+            setTimeout(() => {
+                document.getElementById('cloud3').classList.add('visible', 'floating');
+            }, 1000);
+        }
+
+        // 处理太阳点击
+        function handleSunClick() {
+            playSound('evaporate');
+            showStepInfo(0);
+            createVaporBurst(50, 60);
+        }
+
+        // 处理云朵点击
+        function handleCloudClick(cloudNum) {
+            playSound('rain');
+            showStepInfo(2);
+            createRain(cloudNum);
+        }
+
+        // 创建水蒸气 - 写实自然升腾水汽
+        function createVaporBurst(xPercent, yPercent) {
+            const container = document.getElementById('vaporContainer');
+            const waterSources = [
+                { left: '28%', bottom: '22%' },
+                { left: '38%', bottom: '20%' },
+                { left: '50%', bottom: '21%' },
+                { left: '62%', bottom: '22%' },
+                { left: '72%', bottom: '20%' }
+            ];
+            // 大量细密微粒（模拟逆光可见水汽）
+            for (let i = 0; i < 45; i++) {
+                setTimeout(() => {
+                    const vapor = document.createElement('div');
+                    vapor.className = 'vapor-particle';
+                    const src = waterSources[Math.floor(Math.random() * waterSources.length)];
+                    vapor.style.left = `calc(${src.left} + ${(Math.random() - 0.5) * 60}px)`;
+                    vapor.style.bottom = src.bottom;
+                    container.appendChild(vapor);
+                    requestAnimationFrame(() => vapor.classList.add('active'));
+                    setTimeout(() => vapor.remove(), 5500);
+                }, i * 80);
+            }
+            // 缕缕水汽（缓缓上升、逐步消散）
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const wisp = document.createElement('div');
+                    wisp.className = 'vapor-particle wisp';
+                    const src = waterSources[Math.floor(Math.random() * waterSources.length)];
+                    wisp.style.left = `calc(${src.left} + ${(Math.random() - 0.5) * 50}px)`;
+                    wisp.style.bottom = src.bottom;
+                    container.appendChild(wisp);
+                    requestAnimationFrame(() => wisp.classList.add('active'));
+                    setTimeout(() => wisp.remove(), 4500);
+                }, i * 200 + 100);
+            }
+            // 薄雾层（环境水汽感）
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const haze = document.createElement('div');
+                    haze.className = 'vapor-particle haze';
+                    const src = waterSources[Math.floor(Math.random() * waterSources.length)];
+                    haze.style.left = src.left;
+                    haze.style.bottom = src.bottom;
+                    container.appendChild(haze);
+                    requestAnimationFrame(() => haze.classList.add('active'));
+                    setTimeout(() => haze.remove(), 7500);
+                }, i * 350 + 300);
+            }
+        }
+
+        // 创建雨滴 - 全图
+        function createRain(cloudNum) {
+            const container = document.getElementById('rainContainer');
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const drop = document.createElement('div');
+                    drop.className = 'raindrop';
+                    drop.style.left = (Math.random() * 100) + '%';
+                    drop.style.top = (10 + Math.random() * 30) + '%';
+                    container.appendChild(drop);
+                    
+                    requestAnimationFrame(() => {
+                        drop.classList.add('active');
+                    });
+                    
+                    setTimeout(() => drop.remove(), 2000);
+                }, i * 50);
+            }
+        }
+
+        // 创建地面径流 - 写实水流：浅水漫流+沟渠集中流+波纹
+        function createGroundFlow() {
+            const container = document.getElementById('flowContainer');
+            // 主沟渠水流（顺着地势蜿蜒）
+            const streamPaths = [
+                { left: '12%', bottom: '30%', width: '90px', delay: 0, dur: 3.2 },
+                { left: '22%', bottom: '28%', width: '110px', delay: 120, dur: 3.0 },
+                { left: '35%', bottom: '31%', width: '80px', delay: 200, dur: 3.4 },
+                { left: '50%', bottom: '29%', width: '100px', delay: 80, dur: 3.1 },
+                { left: '65%', bottom: '32%', width: '85px', delay: 280, dur: 3.3 },
+                { left: '78%', bottom: '27%', width: '70px', delay: 180, dur: 3.0 }
+            ];
+            streamPaths.forEach(path => {
+                setTimeout(() => {
+                    const flow = document.createElement('div');
+                    flow.className = 'ground-flow stream';
+                    flow.style.left = path.left;
+                    flow.style.bottom = path.bottom;
+                    flow.style.width = path.width;
+                    flow.style.animationDuration = path.dur + 's';
+                    container.appendChild(flow);
+                    requestAnimationFrame(() => flow.classList.add('active'));
+                    setTimeout(() => flow.remove(), 4000);
+                }, path.delay);
+            });
+            // 浅水漫流层（地面积水顺纹路流动）
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => {
+                    const flow = document.createElement('div');
+                    flow.className = 'ground-flow';
+                    flow.style.left = (8 + Math.random() * 82) + '%';
+                    flow.style.width = (50 + Math.random() * 70) + 'px';
+                    flow.style.bottom = (24 + Math.random() * 5) + '%';
+                    container.appendChild(flow);
+                    requestAnimationFrame(() => flow.classList.add('active'));
+                    setTimeout(() => flow.remove(), 3200);
+                }, i * 220 + 100);
+            }
+            // 水面波纹（浅水层微波）
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    const ripple = document.createElement('div');
+                    ripple.className = 'ground-flow ripple';
+                    ripple.style.left = (15 + Math.random() * 70) + '%';
+                    container.appendChild(ripple);
+                    requestAnimationFrame(() => ripple.classList.add('active'));
+                    setTimeout(() => ripple.remove(), 2200);
+                }, 300 + i * 200);
+            }
+        }
+
+        // 创建径流场景：地表径流 + 地下渗透 + 汇入河流
+        function createRunoffStreams() {
+            const land = document.querySelector('.runoff-land');
+            const arrow = document.getElementById('runoffArrow');
+            if (!land) return;
+            
+            // 地表径流（水在草地表面向右流）- 更多
+            const surfaceStreams = [
+                { top: '3%', delay: 0 },
+                { top: '8%', delay: 150 },
+                { top: '13%', delay: 300 },
+                { top: '18%', delay: 100 },
+                { top: '23%', delay: 250 },
+                { top: '28%', delay: 50 },
+                { top: '33%', delay: 350 }
+            ];
+            surfaceStreams.forEach(s => {
+                setTimeout(() => {
+                    const stream = document.createElement('div');
+                    stream.className = 'surface-stream';
+                    stream.style.top = s.top;
+                    stream.style.left = '5%';
+                    stream.style.width = (70 + Math.random() * 50) + 'px';
+                    land.appendChild(stream);
+                    requestAnimationFrame(() => stream.classList.add('active'));
+                    setTimeout(() => stream.remove(), 2500);
+                }, s.delay);
+            });
+            
+            // 地下渗透（水从地表向下渗透到地下水层）- 更多
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    const seep = document.createElement('div');
+                    seep.className = 'underground-seep';
+                    seep.style.left = (8 + Math.random() * 80) + '%';
+                    seep.style.top = '33%';
+                    land.appendChild(seep);
+                    requestAnimationFrame(() => seep.classList.add('active'));
+                    setTimeout(() => seep.remove(), 2500);
+                }, i * 200 + 400);
+            }
+            
+            // 汇入河流箭头
+            setTimeout(() => {
+                arrow.classList.add('active');
+                setTimeout(() => arrow.classList.remove('active'), 1200);
+            }, 800);
+        }
+
+        // 显示步骤信息
+        function showStepInfo(stepIndex) {
+            playSound('step');
+            currentStep = stepIndex;
+            
+            cloudTimeouts.forEach(t => clearTimeout(t));
+            cloudTimeouts = [];
+            
+            // 更新天空颜色
+            const sky = document.getElementById('sky');
+            sky.className = 'sky';
+            if (stepIndex === 0) sky.classList.add('evaporation');
+            else if (stepIndex === 1) sky.classList.add('condensation');
+            else if (stepIndex === 2) sky.classList.add('precipitation');
+            else if (stepIndex === 3) sky.classList.add('runoff');
+            
+            // 太阳在蒸发时更亮，其他时候变暗
+            const sun = document.getElementById('sun');
+            if (stepIndex === 0) {
+                sun.classList.remove('hidden');
+            } else {
+                sun.classList.add('hidden');
+            }
+            
+            // 云朵控制
+            if (stepIndex === 0) {
+                // 蒸发：没有云朵
+                hideAllClouds();
+            } else if (stepIndex === 1) {
+                // 凝结：云朵慢慢形成
+                hideAllClouds();
+                cloudTimeouts.push(setTimeout(() => showClouds(), 500));
+            } else if (stepIndex === 2) {
+                // 降水：云朵保持显示
+                showClouds();
+            } else if (stepIndex === 3) {
+                // 径流：云朵+地面+水面
+                showClouds();
+            }
+            
+            // 径流场景显示/隐藏
+            const runoffScene = document.getElementById('runoffScene');
+            const runoffArrow = document.getElementById('runoffArrow');
+            if (stepIndex === 3) {
+                runoffScene.classList.add('visible');
+                createRunoffStreams();
+            } else {
+                runoffScene.classList.remove('visible');
+                runoffArrow.classList.remove('active');
+            }
+            
+            // 高亮步骤标签
+            document.querySelectorAll('.step-label').forEach((label, i) => {
+                label.classList.toggle('active', i === stepIndex);
+            });
+            
+            // 高亮信息卡片
+            document.querySelectorAll('.info-card').forEach((card, i) => {
+                card.classList.toggle('active', i === stepIndex);
+            });
+            
+            // 高亮侧边栏
+            document.querySelectorAll('.step-info').forEach((info, i) => {
+                info.classList.toggle('active', i === stepIndex);
+            });
+            
+            // 更新当前讲解
+            const step = steps[stepIndex];
+            document.getElementById('currentExplanation').innerHTML = `
+                <h3>${step.name} <span class="voice-indicator">🔊</span></h3>
+                <p>${step.explanation}</p>
+            `;
+            
+            // 触发相应动画
+            if (stepIndex === 0) {
+                createVaporBurst(50, 60);
+            } else if (stepIndex === 2) {
+                createRain(2);
+            } else if (stepIndex === 3) {
+                createGroundFlow();
+            }
+            
+            // 语音讲解
+            speak(step.voiceText);
+        }
+
+        // 语音讲解当前步骤
+        function speakCurrentStep() {
+            if (currentStep >= 0 && currentStep < steps.length) {
+                speak(steps[currentStep].voiceText);
+            } else {
+                speak('请先选择一个步骤，或者点击完整演示按钮观看动画！');
+            }
+        }
+
+        // 下一步
+        function nextStep() {
+            playSound('click');
+            stopSpeaking();
+            currentStep = (currentStep + 1) % 4;
+            showStepInfo(currentStep);
+        }
+
+        // 重置动画
+        function resetAnimation() {
+            playSound('click');
+            stopSpeaking();
+            isAnimating = false;
+            currentStep = -1;
+            
+            cloudTimeouts.forEach(t => clearTimeout(t));
+            cloudTimeouts = [];
+            
+            // 清除所有动态元素
+            document.getElementById('vaporContainer').innerHTML = '';
+            document.getElementById('rainContainer').innerHTML = '';
+            document.getElementById('flowContainer').innerHTML = '';
+            
+            // 隐藏径流场景
+            document.getElementById('runoffScene').classList.remove('visible');
+            document.getElementById('runoffArrow').classList.remove('active');
+            
+            // 清除径流动态元素
+            document.querySelectorAll('.surface-stream, .underground-seep').forEach(el => el.remove());
+            
+            // 重置天空
+            document.getElementById('sky').className = 'sky';
+            
+            // 重置太阳
+            document.getElementById('sun').classList.remove('hidden');
+            
+            // 隐藏云朵
+            hideAllClouds();
+            
+            // 隐藏所有标签
+            document.querySelectorAll('.step-label').forEach(label => {
+                label.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.info-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.step-info').forEach(info => {
+                info.classList.remove('active');
+            });
+            
+            document.getElementById('currentExplanation').innerHTML = `
+                <h3>🎓 欢迎学习水循环！</h3>
+                <p>点击"完整演示"按钮观看水循环的神奇过程，或点击各个步骤了解详细知识！</p>
+            `;
+        }
+
+        // 开始答题
+        function startQuiz() {
+            playSound('click');
+            stopSpeaking();
+            questions = shuffleArray(allQuestions);
+            document.getElementById('quizSection').style.display = 'block';
+            document.getElementById('quizSection').scrollIntoView({ behavior: 'smooth' });
+            currentQuestion = 0;
+            score = 0;
+            correctAnswers = 0;
+            updateScore();
+            showQuestion();
+        }
+
+        // 显示问题
+        function showQuestion() {
+            if (currentQuestion >= totalQuestions) {
+                showCompletion();
+                return;
+            }
+
+            const q = questions[currentQuestion];
+            document.getElementById('questionNumber').textContent = `问题 ${currentQuestion + 1}/${totalQuestions}`;
+            document.getElementById('questionText').textContent = q.question;
+            
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            // 更新进度条
+            const progress = (currentQuestion / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressBar').textContent = Math.round(progress) + '%';
+            document.getElementById('questionProgress').textContent = `${currentQuestion + 1}/${totalQuestions}`;
+
+            // 清除反馈
+            const feedback = document.getElementById('feedback');
+            feedback.classList.remove('show', 'correct', 'wrong');
+            
+            // 语音读题
+            speak(q.question);
+        }
+
+        // 检查答案
+        function checkAnswer(selected) {
+            playSound('click');
+            const q = questions[currentQuestion];
+            const buttons = document.querySelectorAll('.option-btn');
+            const feedback = document.getElementById('feedback');
+
+            // 禁用所有按钮
+            buttons.forEach(btn => {
+                btn.onclick = null;
+                btn.style.cursor = 'not-allowed';
+            });
+
+            if (selected === q.correct) {
+                playSound('correct');
+                buttons[selected].classList.add('correct');
+                feedback.textContent = '✅ 太棒了！' + q.explanation;
+                feedback.classList.add('show', 'correct');
+                score += 20;
+                correctAnswers++;
+            } else {
+                playSound('wrong');
+                buttons[selected].classList.add('wrong');
+                buttons[q.correct].classList.add('correct');
+                feedback.textContent = '❌ 正确答案是: ' + q.options[q.correct] + '。' + q.explanation;
+                feedback.classList.add('show', 'wrong');
+            }
+
+            updateScore();
+            speak(feedback.textContent);
+
+            // 延迟后显示下一题
+            setTimeout(() => {
+                currentQuestion++;
+                showQuestion();
+            }, 3000);
+        }
+
+        // 更新分数显示
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            const accuracy = currentQuestion > 0 ? Math.round((correctAnswers / currentQuestion) * 100) : 100;
+            document.getElementById('accuracy').textContent = accuracy;
+        }
+
+        // 显示完成界面
+        function showCompletion() {
+            playSound('complete');
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('completionScreen').style.display = 'flex';
+            document.getElementById('finalScore').textContent = score;
+
+            let message = '';
+            if (score >= 100) {
+                message = '🌟 太棒了！你是水循环小专家！🌟';
+            } else if (score >= 80) {
+                message = '👍 非常好！你已经掌握了大部分知识！';
+            } else if (score >= 60) {
+                message = '💪 不错！继续加油，你会更棒的！';
+            } else {
+                message = '📚 没关系，让我们再学习一次吧！';
+            }
+            document.getElementById('completionMessage').textContent = message;
+            speak(`恭喜你完成答题！${message} 你的得分是${score}分！`);
+        }
+
+        // 重新开始
+        function restartGame() {
+            playSound('click');
+            stopSpeaking();
+            document.getElementById('completionScreen').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            score = 0;
+            currentQuestion = 0;
+            correctAnswers = 0;
+            currentStep = -1;
+            isAnimating = false;
+            
+            resetAnimation();
+            
+            if (gameMode === 'quiz') {
+                questions = shuffleArray(allQuestions);
+                document.querySelector('.main-content').style.display = 'none';
+                document.querySelector('.control-buttons').style.display = 'none';
+                document.querySelector('.animation-info').style.display = 'none';
+                document.getElementById('quizSection').style.display = 'block';
+                document.getElementById('routeSection').style.display = 'none';
+                document.getElementById('extraQuizSection').style.display = 'none';
+                showQuestion();
+            } else {
+                document.querySelector('.main-content').style.display = 'grid';
+                document.querySelector('.control-buttons').style.display = 'flex';
+                document.querySelector('.animation-info').style.display = 'grid';
+                document.getElementById('quizSection').style.display = 'none';
+                document.getElementById('routeSection').style.display = 'none';
+                document.getElementById('extraQuizSection').style.display = 'none';
+            }
+            
+            updateScore();
+        }
+
+        // 返回菜单
+        function backToMenu() {
+            playSound('click');
+            stopSpeaking();
+            gameMode = 'learn';
+            document.getElementById('completionScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+            document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('routeSection').style.display = 'none';
+            document.getElementById('extraQuizSection').style.display = 'none';
+            document.querySelector('.main-content').style.display = 'grid';
+            document.querySelector('.control-buttons').style.display = 'flex';
+            document.querySelector('.animation-info').style.display = 'grid';
+            resetAnimation();
+        }
+
+        // ========== 闯关路线图 ==========
+        const routeQuizData = [
+            {
+                prompt: '第1关：太阳加热水面，水会变成什么飞向天空？',
+                options: ['冰块', '水蒸气', '石头', '沙子'],
+                correct: 1,
+                nodeLabel: '蒸发',
+                successEmoji: '☀️',
+                successText: '闯关成功！蒸发完成！',
+                successSub: '太阳的热量让水变成了看不见的水蒸气，飞向天空。这就是蒸发！'
+            },
+            {
+                prompt: '第2关：水蒸气升到高空遇到冷空气，会变成什么？',
+                options: ['雪花', '小水滴/云朵', '彩虹', '闪电'],
+                correct: 1,
+                nodeLabel: '凝结',
+                successEmoji: '☁️',
+                successText: '闯关成功！凝结完成！',
+                successSub: '水蒸气遇冷变成小水滴聚在一起，就形成了云朵。这就是凝结！'
+            },
+            {
+                prompt: '第3关：云里的小水滴越聚越大，最终会怎样？',
+                options: ['飞走了', '变成雨落下来', '变成星星', '消失不见'],
+                correct: 1,
+                nodeLabel: '降水',
+                successEmoji: '🌧️',
+                successText: '闯关成功！降水完成！',
+                successSub: '水滴变重后从云中落下来，形成雨、雪、冰雹。这就是降水！'
+            },
+            {
+                prompt: '第4关：雨水落到地面后会怎样流动？',
+                options: ['向上飞', '形成径流流向低处/大海', '原地不动', '变成蒸汽'],
+                correct: 1,
+                nodeLabel: '径流',
+                successEmoji: '🌊',
+                successText: '恭喜通关！水循环完成！',
+                successSub: '雨水沿着地面流向低处，最终汇入河流和大海。这就是径流！完整的水循环你都学会啦！'
+            }
+        ];
+
+        let currentRouteStep = 0;
+
+        function showRouteMap() {
+            playSound('click');
+            stopSpeaking();
+            document.getElementById('routeSection').style.display = 'block';
+            document.getElementById('routeSection').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('extraQuizSection').style.display = 'none';
+            currentRouteStep = 0;
+            resetRouteMap();
+            showRouteQuestion();
+        }
+
+        function resetRouteMap() {
+            for (let i = 1; i <= 4; i++) {
+                const node = document.getElementById('rn' + i);
+                node.classList.remove('completed', 'unlocked');
+                node.classList.add('locked');
+                document.getElementById('rnLabel' + i).textContent = '第' + i + '关';
+            }
+            for (let i = 0; i < 4; i++) {
+                document.getElementById('ra' + i).classList.remove('filled');
+            }
+            document.getElementById('rn1').classList.remove('locked');
+            document.getElementById('rn1').classList.add('unlocked');
+            document.getElementById('routeResult').style.display = 'none';
+        }
+
+        function showRouteQuestion() {
+            if (currentRouteStep >= 4) {
+                document.getElementById('routeQuizArea').style.display = 'none';
+                const result = document.getElementById('routeResult');
+                result.textContent = '🎉 全部通关！你画出了完整的水循环路线！';
+                result.className = 'route-result success';
+                result.style.display = 'block';
+                playSound('complete');
+                speak('恭喜你成功闯过所有关卡，画出了完整的水循环路线图！');
+                return;
+            }
+
+            const q = routeQuizData[currentRouteStep];
+            const area = document.getElementById('routeQuizArea');
+            const prompt = document.getElementById('routeQuizPrompt');
+            const opts = document.getElementById('routeQuizOptions');
+
+            area.style.display = 'block';
+            prompt.textContent = q.prompt;
+
+            opts.innerHTML = '';
+            q.options.forEach((opt, j) => {
+                const btn = document.createElement('button');
+                btn.className = 'route-opt-btn';
+                btn.textContent = opt;
+                btn.onclick = () => checkRouteAnswer(j);
+                opts.appendChild(btn);
+            });
+        }
+
+        function checkRouteAnswer(selected) {
+            const q = routeQuizData[currentRouteStep];
+            const btns = document.querySelectorAll('.route-opt-btn');
+
+            btns.forEach((btn, j) => {
+                btn.onclick = null;
+                btn.style.cursor = 'not-allowed';
+                if (j === q.correct) btn.classList.add('correct');
+                if (j === selected && j !== q.correct) btn.classList.add('wrong');
+            });
+
+            if (selected === q.correct) {
+                playSound('correct');
+                score += 10;
+                updateScore();
+
+                // 解锁节点
+                const node = document.getElementById('rn' + (currentRouteStep + 1));
+                node.classList.remove('locked', 'unlocked');
+                node.classList.add('completed');
+                document.getElementById('rnLabel' + (currentRouteStep + 1)).textContent = q.nodeLabel;
+                document.getElementById('ra' + currentRouteStep).classList.add('filled');
+
+                // 显示鼓励弹窗
+                setTimeout(() => showCelebrate(q.successEmoji, q.successText, q.successSub), 500);
+            } else {
+                playSound('wrong');
+                // 错误后允许重试
+                setTimeout(() => {
+                    btns.forEach((btn, j) => {
+                        btn.classList.remove('wrong');
+                        btn.onclick = () => checkRouteAnswer(j);
+                        btn.style.cursor = 'pointer';
+                    });
+                }, 1000);
+            }
+        }
+
+        function showCelebrate(emoji, text, sub) {
+            document.getElementById('celEmoji').textContent = emoji;
+            document.getElementById('celText').textContent = text;
+            document.getElementById('celSub').textContent = sub;
+            document.getElementById('routeCelebrate').classList.add('show');
+        }
+
+        function closeCelebrate() {
+            playSound('click');
+            document.getElementById('routeCelebrate').classList.remove('show');
+            currentRouteStep++;
+            if (currentRouteStep < 4) {
+                document.getElementById('rn' + (currentRouteStep + 1)).classList.remove('locked');
+                document.getElementById('rn' + (currentRouteStep + 1)).classList.add('unlocked');
+            }
+            showRouteQuestion();
+        }
+
+        function showExtraQuiz() {
+            playSound('click');
+            stopSpeaking();
+            document.getElementById('extraQuizSection').style.display = 'block';
+            document.getElementById('extraQuizSection').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('quizSection').style.display = 'none';
+            document.getElementById('routeSection').style.display = 'none';
+            currentExtraTab = 'scenario';
+            document.querySelectorAll('.extra-tab-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === 0);
+            });
+            renderExtraQuestion();
+        }
+
+        // ========== 情景问答 & 脑洞问答 ==========
+        const scenarioQuestions = [
+            {
+                question: '洗完的衣服挂在阳台，为什么过几天就变干了？',
+                options: ['风把水吹走了', '衣服吸收了水', '水分蒸发变成了水蒸气', '太阳把水冻住了'],
+                correct: 2,
+                explanation: '阳光和风让衣服上的水慢慢蒸发，变成了看不见的水蒸气飞到空气中，衣服就干啦！'
+            },
+            {
+                question: '大雨过后，路上的积水最后去了哪里？',
+                options: ['飞到天上去了', '渗入地下或流入下水道、小河', '被泥土吃掉了', '消失在空气中'],
+                correct: 1,
+                explanation: '雨水会沿着地面流动（地表径流），有的渗入地下，有的流入下水道和小河，最终汇入大海。'
+            },
+            {
+                question: '夏天从冰箱拿出冷饮，杯子外面为什么会"出汗"？',
+                options: ['杯子里的水漏出来了', '空气中的水蒸气遇冷凝结成小水滴', '有人往杯子上洒了水', '冰块融化流出来了'],
+                correct: 1,
+                explanation: '空气中的水蒸气遇到冰冷的杯子，冷却后变成了小水珠附在杯子外面，这就是凝结现象！'
+            },
+            {
+                question: '为什么沙漠地区很少下雨？',
+                options: ['沙漠里没有水可以蒸发', '沙漠的水蒸气很难形成云', '沙漠太高了雨下不来', '沙漠的风把雨吹走了'],
+                correct: 1,
+                explanation: '沙漠地区非常干燥，空气中水蒸气很少，难以形成足够的云来降雨。'
+            }
+        ];
+
+        const brainstormQuestions = [
+            {
+                question: '🤔 如果世界上完全没有蒸发，会变成什么样？',
+                options: ['不会有云和雨，河流会干涸', '会下更多的雨', '天气不会有任何变化', '海水会变多'],
+                correct: 0,
+                explanation: '蒸发是水循环的起点！没有蒸发就没有水蒸气，也就不会形成云和降雨，河流湖泊会逐渐干涸，地球会变成一片荒漠。'
+            },
+            {
+                question: '🤔 如果地表完全没有坡度（完全平坦），径流还会流动吗？',
+                options: ['不会流动，水会原地停留', '还是会慢慢流动', '水会自动飞起来', '会流得更快'],
+                correct: 0,
+                explanation: '地表径流靠重力和地势落差流动。如果地面完全平坦，水就没有流动的动力，会原地积聚形成水塘。'
+            },
+            {
+                question: '🤔 如果地球上的冰全部融化，水循环会怎样变化？',
+                options: ['水循环会完全停止', '海平面大幅上升，蒸发和降水会加剧', '不会有任何变化', '太阳会变得更热'],
+                correct: 1,
+                explanation: '冰川融化后大量水流入海洋，海平面上升，水面面积增大导致蒸发加剧，极端天气和暴雨会更多。'
+            },
+            {
+                question: '🤔 如果植物全部消失，对水循环有什么影响？',
+                options: ['没有影响', '蒸腾作用减少，降水减少，水土流失加剧', '会下更多的雨', '河流会变清'],
+                correct: 1,
+                explanation: '植物通过蒸腾作用向大气释放大量水蒸气。没有植物，空气变干燥降水减少，而且没有根系固土，雨水会冲走大量泥沙。'
+            }
+        ];
+
+        let currentExtraTab = 'scenario';
+        let extraAnswered = { scenario: new Set(), brainstorm: new Set() };
+
+        function switchExtraTab(tab) {
+            currentExtraTab = tab;
+            document.querySelectorAll('.extra-tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderExtraQuestion();
+        }
+
+        function renderExtraQuestion() {
+            const questions = currentExtraTab === 'scenario' ? scenarioQuestions : brainstormQuestions;
+            const answered = extraAnswered[currentExtraTab];
+            const area = document.getElementById('extraQuestionArea');
+            const progress = document.getElementById('extraProgress');
+            
+            progress.textContent = `已答对 ${answered.size} / ${questions.length} 题`;
+            
+            let html = '';
+            questions.forEach((q, i) => {
+                const isAnswered = answered.has(i);
+                const tag = currentExtraTab === 'scenario' ? '情景问答' : '脑洞问答';
+                const tagClass = currentExtraTab === 'scenario' ? 'tag-scenario' : 'tag-brainstorm';
+                
+                html += `<div class="extra-question-card" id="eq${currentExtraTab}_${i}">
+                    <div class="extra-q-tag ${tagClass}">${tag}</div>
+                    <div class="extra-q-text">${q.question}</div>
+                    <div class="extra-q-options">`;
+                
+                q.options.forEach((opt, j) => {
+                    const disabled = isAnswered ? 'disabled' : '';
+                    const extraClass = isAnswered ? (j === q.correct ? 'correct' : '') : '';
+                    html += `<button class="extra-q-btn ${extraClass}" ${disabled} onclick="checkExtraAnswer('${currentExtraTab}',${i},${j})">${opt}</button>`;
+                });
+                
+                html += `</div>
+                    <div class="extra-q-feedback ${isAnswered ? 'show correct-fb' : ''}" id="efb_${currentExtraTab}_${i}">
+                        ${isAnswered ? '✅ ' + q.explanation : ''}
+                    </div>
+                </div>`;
+            });
+            
+            area.innerHTML = html;
+        }
+
+        function checkExtraAnswer(tab, qIdx, selected) {
+            const questions = tab === 'scenario' ? scenarioQuestions : brainstormQuestions;
+            const q = questions[qIdx];
+            const card = document.getElementById('eq' + tab + '_' + qIdx);
+            const btns = card.querySelectorAll('.extra-q-btn');
+            const fb = document.getElementById('efb_' + tab + '_' + qIdx);
+            
+            btns.forEach((btn, j) => {
+                btn.disabled = true;
+                if (j === q.correct) btn.classList.add('correct');
+                if (j === selected && j !== q.correct) btn.classList.add('wrong');
+            });
+            
+            if (selected === q.correct) {
+                extraAnswered[tab].add(qIdx);
+                fb.className = 'extra-q-feedback show correct-fb';
+                const praises = ['🎉 太厉害了！', '⭐ 你真聪明！', '🏆 完全正确！', '👏 答得太棒了！', '🌟 知识小达人！'];
+                fb.textContent = praises[Math.floor(Math.random() * praises.length)] + ' ' + q.explanation;
+                playSound('correct');
+                score += 15;
+                updateScore();
+                // 鼓励弹窗
+                showCelebrate('🌟', '回答正确！', q.explanation);
+            } else {
+                fb.className = 'extra-q-feedback show wrong-fb';
+                fb.innerHTML = '❌ <b>别灰心！正确答案是：' + q.options[q.correct] + '</b><br><br>' +
+                    '📖 <b>详细原因：</b>' + q.explanation;
+                playSound('wrong');
+            }
+            
+            document.getElementById('extraProgress').textContent = 
+                `已答对 ${extraAnswered[tab].size} / ${questions.length} 题`;
+        }
+
+        // 初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
